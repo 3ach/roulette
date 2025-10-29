@@ -4,7 +4,6 @@ use anyhow::Result;
 use futures::stream::{BoxStream, StreamExt};
 use json;
 use reqwest_eventsource::{retry::Never, Error as RESError, Event, RequestBuilderExt};
-use std::collections::HashMap;
 use reqwest;
 
 pub struct ChatGPT {}
@@ -18,10 +17,9 @@ impl ChatGPT {
 
 impl<'a> Model<'a> for ChatGPT {
     fn call(&self, prompt: &str) -> Result<BoxStream<'a, String>> {
-        println!("oai");
         let mut body = json::JsonValue::new_object();
         body["model"] = "gpt-4.1".into();
-        body["max_output_tokens"] = 1024.into();
+        body["max_output_tokens"] = self.max_output().into();
         body["input"] = prompt.into();
         body["stream"] = true.into();
 

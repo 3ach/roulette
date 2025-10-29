@@ -1,24 +1,26 @@
-use anyhow;
 use axum::{
     http::StatusCode,
     response::sse::{Event, KeepAlive, Sse},
-    routing::get,
+    routing::{get, get_service},
     Router,
 };
 use futures::{Stream, StreamExt};
 use std::convert::Infallible;
+use tower_http::services::ServeDir;
 
 use crate::models::model::select;
 
 pub fn app() -> Router {
+    let static_route = Router::new().nest_service("/frontend", get_service(ServeDir::new("./frontend")));
     Router::new().route("/prompt", get(prompt))
+    .merge(static_route)
 }
 
-#[axum::debug_handler]
 async fn prompt() -> Result<Sse<impl Stream<Item = Result<Event, Infallible>>>, StatusCode> {
     let model = select();
+    println!("Calling {}", model.name());
 
-    if let Ok(mut stream) = model.call("Tell me about the French Revolution.") {
+    if let Ok(stream) = model.call("Tell me about the French Revolution.") {
         Ok(Sse::new(
             stream
                 .map(move |chunk| Event::default().data(chunk))

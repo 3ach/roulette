@@ -34,15 +34,14 @@ curl "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:s
 
 impl<'a> Model<'a> for Gemini {
     fn call(&self, prompt: &str) -> Result<BoxStream<'a, String>> {
-        println!("gemini");
         let mut parts = json::JsonValue::new_array();
-        parts.push(HashMap::from([("text", prompt)]));
+        parts.push(HashMap::from([("text", prompt)]))?;
 
         let mut contents = json::JsonValue::new_array();
-        contents.push(HashMap::from([("parts", parts)]));
+        contents.push(HashMap::from([("parts", parts)]))?;
 
         let mut generation_config = json::JsonValue::new_object();
-        generation_config["maxOutputTokens"] = 1024.into();
+        generation_config["maxOutputTokens"] = self.max_output().into();
         generation_config["thinkingConfig"] = HashMap::from([("thinkingBudget", 0)]).into();
 
         let mut body = json::JsonValue::new_object();

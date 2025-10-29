@@ -1,11 +1,10 @@
 use crate::models::model::Model;
 
-use anyhow::{Error, Result};
+use anyhow::Result;
 use futures::stream::{BoxStream, StreamExt};
 use json;
 use reqwest;
 use reqwest_eventsource::{retry::Never, Error as RESError, Event, RequestBuilderExt};
-use std::collections::HashMap;
 
 pub struct Claude {}
 
@@ -17,8 +16,6 @@ impl Claude {
 
 impl<'a> Model<'a> for Claude {
     fn call(&self, prompt: &str) -> Result<BoxStream<'a, String>> {
-        println!("claude");
-
         let mut message = json::JsonValue::new_object();
         message["role"] = "user".into();
         message["content"] = prompt.into();
@@ -28,7 +25,7 @@ impl<'a> Model<'a> for Claude {
 
         let mut body = json::JsonValue::new_object();
         body["model"] = "claude-sonnet-4-5".into();
-        body["max_tokens"] = 1024.into();
+        body["max_tokens"] = self.max_output().into();
         body["stream"] = true.into();
         body["messages"] = messages;
 
