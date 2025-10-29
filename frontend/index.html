@@ -1,0 +1,35 @@
+<html>
+    <head>
+        <title>Roulette</title>
+    </head>
+    <body>
+        <h1>Roulette</h1>
+        <h2>Can you guess who is who?</h2>
+        <script src="./sse.js"> </script>
+        <script>
+            window.addEventListener('DOMContentLoaded', () => {
+                document.getElementById("promptForm").addEventListener('submit', (e) => {
+                    e.preventDefault();
+
+                    var prompt = document.getElementById("prompt").value;
+                    var sse = SSE("http://localhost:3000/prompt", {
+                        payload: prompt,
+                    });
+
+                    var response = document.getElementById("response");
+                    response.value = "";
+                    sse.addEventListener('message', (m) => {
+                        response.value += m.data;
+                    })
+                })
+            })
+        </script>
+
+        <form id="promptForm">
+            <input id="prompt" placeholder="Ask a question" />
+            <button>Get an answer</button>
+            <br>
+            <textarea id="response" disabled rows="30" cols="80"> </textarea>
+        </form>
+    </body>
+</html>

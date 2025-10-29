@@ -1,7 +1,7 @@
 use axum::{
     http::StatusCode,
     response::sse::{Event, KeepAlive, Sse},
-    routing::{get, get_service},
+    routing::{post, get_service},
     Router,
 };
 use futures::{Stream, StreamExt};
@@ -12,15 +12,15 @@ use crate::models::model::select;
 
 pub fn app() -> Router {
     let static_route = Router::new().nest_service("/frontend", get_service(ServeDir::new("./frontend")));
-    Router::new().route("/prompt", get(prompt))
+    Router::new().route("/prompt", post(prompt))
     .merge(static_route)
 }
 
-async fn prompt() -> Result<Sse<impl Stream<Item = Result<Event, Infallible>>>, StatusCode> {
+async fn prompt(user_prompt: String) -> Result<Sse<impl Stream<Item = Result<Event, Infallible>>>, StatusCode> {
     let model = select();
     println!("Calling {}", model.name());
 
-    if let Ok(stream) = model.call("Tell me about the French Revolution.") {
+    if let Ok(stream) = model.call(&user_prompt) {
         Ok(Sse::new(
             stream
                 .map(move |chunk| Event::default().data(chunk))
