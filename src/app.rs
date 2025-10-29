@@ -18,7 +18,7 @@ pub fn app() -> Router {
 async fn prompt() -> Result<Sse<impl Stream<Item = Result<Event, Infallible>>>, StatusCode> {
     let model = select();
 
-    if let Ok(mut stream) = model.call("Calling a model") {
+    if let Ok(mut stream) = model.call("Tell me about the French Revolution.") {
         Ok(Sse::new(
             stream
                 .map(move |chunk| Event::default().data(chunk))
