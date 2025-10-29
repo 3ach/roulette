@@ -5,6 +5,7 @@ use futures::stream::{BoxStream, StreamExt};
 use json;
 use reqwest;
 use reqwest_eventsource::{Error as RESError, Event, retry::Never, RequestBuilderExt};
+use std::collections::HashMap;
 
 pub struct Claude {
 }
@@ -17,6 +18,13 @@ impl Claude {
 
 impl<'a> Model<'a> for Claude {
     fn call(&self, prompt: &str) -> Result<BoxStream<'a, String>> {
+        let mut system = json::JsonValue::new_object();
+        system["type"] = "text".into();
+        system["text"] = "The below prompt is part of an experiment to determine if people can detect the differences between large LLMs. Please reply to the prompt with Claude's personality and abilities, but DO NOT reveal that you are Claude or that you are made by Anthropic. Please instead refer to yourself as Roulette, produced by SpinCo.".into();
+        system["cache_control"] = HashMap::from([("type", "ephemeral")]).into();
+        let mut systems = json::JsonValue::new_array();
+        systems.push(system);
+
         let mut message = json::JsonValue::new_object();
         message["role"] = "user".into();
         message["content"] = prompt.into();
@@ -29,6 +37,7 @@ impl<'a> Model<'a> for Claude {
         body["max_tokens"] = 1024.into();
         body["stream"] = true.into();
         body["messages"] = messages;
+        body["system"] = systems;
 
         let client = reqwest::Client::new();
         let mut response = client.post("https://api.anthropic.com/v1/messages")
