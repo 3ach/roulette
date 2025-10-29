@@ -2,9 +2,9 @@ use anyhow::Result;
 use futures::stream::BoxStream;
 use rand::random;
 
-use crate::models::claude::Claude;
-use crate::models::gemini::Gemini;
-use crate::models::chatgpt::ChatGPT;
+use crate::models::Claude;
+use crate::models::Gemini;
+use crate::models::ChatGPT;
 
 pub trait Model {
     fn call(&self, prompt: &str) -> Result<BoxStream<'static, String>>;
