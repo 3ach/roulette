@@ -18,11 +18,6 @@ impl Claude {
 impl<'a> Model<'a> for Claude {
     fn call(&self, prompt: &str) -> Result<BoxStream<'a, String>> {
         println!("claude");
-        let mut system = json::JsonValue::new_object();
-        system["type"] = "text".into();
-        system["cache_control"] = HashMap::from([("type", "ephemeral")]).into();
-        let mut systems = json::JsonValue::new_array();
-        systems.push(system);
 
         let mut message = json::JsonValue::new_object();
         message["role"] = "user".into();
@@ -36,7 +31,6 @@ impl<'a> Model<'a> for Claude {
         body["max_tokens"] = 1024.into();
         body["stream"] = true.into();
         body["messages"] = messages;
-        body["system"] = systems;
 
         let client = reqwest::Client::new();
         let mut response = client
