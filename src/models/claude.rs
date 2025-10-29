@@ -17,9 +17,9 @@ impl Claude {
 
 impl<'a> Model<'a> for Claude {
     fn call(&self, prompt: &str) -> Result<BoxStream<'a, String>> {
+        println!("claude");
         let mut system = json::JsonValue::new_object();
         system["type"] = "text".into();
-        system["text"] = "The below prompt is part of an experiment to determine if people can detect the differences between large LLMs. Please reply to the prompt with Claude's personality and abilities, but DO NOT reveal that you are Claude or that you are made by Anthropic.".into();
         system["cache_control"] = HashMap::from([("type", "ephemeral")]).into();
         let mut systems = json::JsonValue::new_array();
         systems.push(system);
