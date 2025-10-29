@@ -2,18 +2,17 @@ use crate::models::model::Model;
 use anyhow::{Error, Result};
 use futures::stream::BoxStream;
 
-pub struct Gemini<'a> {
-    token: &'a str,
+pub struct Gemini {
 }
 
-impl<'a> Gemini<'a> {
-    pub fn new(token: &'a str) -> Gemini<'a> {
-        Gemini { token }
+impl Gemini {
+    pub fn new() -> Gemini {
+        Gemini { }
     }
 }
 
-impl<'a> Model for Gemini<'a> {
-    fn call(&self, _prompt: &str) -> Result<BoxStream<'static, String>> {
+impl<'a> Model<'a> for Gemini {
+    fn call(&self, _prompt: &str) -> Result<BoxStream<'a, String>> {
         println!("Calling on Gemini");
         Err(Error::msg("not implemented"))
     }

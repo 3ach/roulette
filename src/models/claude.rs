@@ -6,18 +6,17 @@ use json;
 use reqwest;
 use reqwest_eventsource::{Error as RESError, Event, retry::Never, RequestBuilderExt};
 
-pub struct Claude<'a> {
-    token: &'a str,
+pub struct Claude {
 }
 
-impl<'a> Claude<'a> {
-    pub fn new(token: &'a str) -> Claude<'a> {
-        Claude { token }
+impl Claude {
+    pub fn new() -> Claude {
+        Claude {}
     }
 }
 
-impl<'a> Model for Claude<'a> {
-    fn call(&self, prompt: &str) -> Result<BoxStream<'static, String>> {
+impl<'a> Model<'a> for Claude {
+    fn call(&self, prompt: &str) -> Result<BoxStream<'a, String>> {
         let mut message = json::JsonValue::new_object();
         message["role"] = "user".into();
         message["content"] = prompt.into();

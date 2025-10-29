@@ -2,18 +2,17 @@ use crate::models::model::Model;
 use anyhow::{Error, Result};
 use futures::stream::BoxStream;
 
-pub struct ChatGPT<'a> {
-    token: &'a str,
+pub struct ChatGPT {
 }
 
-impl<'a> ChatGPT<'a> {
-    pub fn new(token: &'a str) -> ChatGPT<'a> {
-        ChatGPT { token }
+impl ChatGPT {
+    pub fn new() -> ChatGPT {
+        ChatGPT { }
     }
 }
 
-impl<'a> Model for ChatGPT<'a> {
-    fn call(&self, _prompt: &str) -> Result<BoxStream<'static, String>> {
+impl<'a> Model<'a> for ChatGPT {
+    fn call(&self, _prompt: &str) -> Result<BoxStream<'a, String>> {
         println!("Calling on ChatGPT");
         Err(Error::msg("not implemented"))
     }
