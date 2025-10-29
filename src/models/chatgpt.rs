@@ -2,12 +2,11 @@ use crate::models::model::Model;
 use anyhow::{Error, Result};
 use futures::stream::BoxStream;
 
-pub struct ChatGPT {
-}
+pub struct ChatGPT {}
 
 impl ChatGPT {
     pub fn new() -> ChatGPT {
-        ChatGPT { }
+        ChatGPT {}
     }
 }
 

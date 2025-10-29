@@ -2,12 +2,11 @@ use crate::models::model::Model;
 use anyhow::{Error, Result};
 use futures::stream::BoxStream;
 
-pub struct Gemini {
-}
+pub struct Gemini {}
 
 impl Gemini {
     pub fn new() -> Gemini {
-        Gemini { }
+        Gemini {}
     }
 }
 

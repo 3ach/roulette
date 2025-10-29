@@ -1,9 +1,8 @@
-
-pub mod model;
-mod claude;
 mod chatgpt;
+mod claude;
 mod gemini;
+pub mod model;
 
-use gemini::Gemini;
-use claude::Claude;
 use chatgpt::ChatGPT;
+use claude::Claude;
+use gemini::Gemini;

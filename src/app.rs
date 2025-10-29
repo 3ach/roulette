@@ -1,8 +1,12 @@
+use anyhow;
 use axum::{
+    http::StatusCode,
+    response::sse::{Event, KeepAlive, Sse},
     routing::get,
     Router,
 };
-use futures::StreamExt;
+use futures::{Stream, StreamExt};
+use std::convert::Infallible;
 
 use crate::models::model::select;
 
@@ -11,15 +15,17 @@ pub fn app() -> Router {
 }
 
 #[axum::debug_handler]
-async fn prompt() -> String {
+async fn prompt() -> Result<Sse<impl Stream<Item = Result<Event, Infallible>>>, StatusCode> {
     let model = select();
 
-    if let Ok(mut stream) = model.call("Calling a model!") {
-        while let Some(chunk) = stream.next().await {
-            println!("{chunk:?}");
-        }
+    if let Ok(mut stream) = model.call("Calling a model") {
+        Ok(Sse::new(
+            stream
+                .map(move |chunk| Event::default().data(chunk))
+                .map(Ok),
+        )
+        .keep_alive(KeepAlive::default()))
+    } else {
+        Err(StatusCode::INTERNAL_SERVER_ERROR)
     }
-
-
-    format!("Called {}", model.name())
 }
