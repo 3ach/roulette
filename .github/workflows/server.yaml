@@ -6,7 +6,7 @@ on:
       - src/**
       - Cargo.lock
       - Cargo.toml
-      - .github/workflows/publish.yml
+      - .github/workflows/server.yml
 
 jobs:
   build:
