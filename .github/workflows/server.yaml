@@ -1,0 +1,33 @@
+name: Build server 
+
+on:
+  push:
+    paths: 
+      - src/**
+      - Cargo.lock
+      - Cargo.toml
+      - .github/workflows/publish.yml
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.9
+      - name: Build
+        run: cargo build --release
+        env:
+          SCCACHE_GHA_ENABLED: "true"
+          RUSTC_WRAPPER: "sccache"
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: ghcr.io/3ach/roulette:latest

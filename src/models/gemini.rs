@@ -6,6 +6,7 @@ use json;
 use reqwest_eventsource::{retry::Never, Error as RESError, Event, RequestBuilderExt};
 use std::collections::HashMap;
 use reqwest;
+use std::env::var;
 
 pub struct Gemini {}
 
@@ -31,10 +32,12 @@ impl<'a> Model<'a> for Gemini {
         body["contents"] = contents;
         body["generationConfig"] = generation_config;
 
+        let token = var("GEMINI_API_KEY").unwrap();
+
         let client = reqwest::Client::new();
         let mut response = client
             .post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse")
-            .header("x-goog-api-key", env!("GEMINI_API_KEY"))
+            .header("x-goog-api-key", token)
             .header("content-type", "application/json")
             .body(json::stringify(body))
             .eventsource()?;

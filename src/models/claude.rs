@@ -5,6 +5,7 @@ use futures::stream::{BoxStream, StreamExt};
 use json;
 use reqwest;
 use reqwest_eventsource::{retry::Never, Error as RESError, Event, RequestBuilderExt};
+use std::env::var;
 
 pub struct Claude {}
 
@@ -23,6 +24,8 @@ impl<'a> Model<'a> for Claude {
         let mut messages = json::JsonValue::new_array();
         messages.push(message)?;
 
+        let token = var("ANTHROPIC_API_KEY").unwrap();
+
         let mut body = json::JsonValue::new_object();
         body["model"] = "claude-sonnet-4-5".into();
         body["max_tokens"] = self.max_output().into();
@@ -32,7 +35,7 @@ impl<'a> Model<'a> for Claude {
         let client = reqwest::Client::new();
         let mut response = client
             .post("https://api.anthropic.com/v1/messages")
-            .header("x-api-key", env!("ANTHROPIC_API_KEY"))
+            .header("x-api-key", token)
             .header("anthropic-version", "2023-06-01")
             .header("content-type", "application/json")
             .body(json::stringify(body))

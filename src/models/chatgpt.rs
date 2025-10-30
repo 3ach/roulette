@@ -5,6 +5,7 @@ use futures::stream::{BoxStream, StreamExt};
 use json;
 use reqwest_eventsource::{retry::Never, Error as RESError, Event, RequestBuilderExt};
 use reqwest;
+use std::env::var;
 
 pub struct ChatGPT {}
 
@@ -23,10 +24,12 @@ impl<'a> Model<'a> for ChatGPT {
         body["input"] = prompt.into();
         body["stream"] = true.into();
 
+        let token = var("OPENAI_API_KEY").unwrap();
+
         let client = reqwest::Client::new();
         let mut response = client
             .post("https://api.openai.com/v1/responses")
-            .bearer_auth(env!("OPENAI_API_KEY"))
+            .bearer_auth(token)
             .header("content-type", "application/json")
             .body(json::stringify(body))
             .eventsource()?;
