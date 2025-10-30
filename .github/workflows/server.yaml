@@ -29,5 +29,6 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
+          context: .
           push: true
           tags: ghcr.io/3ach/roulette:latest
