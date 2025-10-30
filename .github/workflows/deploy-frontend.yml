@@ -1,0 +1,45 @@
+name: Build and Deploy Frontend to GitHub Pages
+
+on:
+  push:
+    paths:
+      - frontend/**
+      - .github/workflows/deploy-frontend.yml
+
+permissions:
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-frontend
+      cancel-in-progress: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Bun
+        run: |
+          curl -fsSL https://bun.sh/install | bash -s -- --prefix /usr/local
+          echo "::add-path::${HOME}/.bun/bin"
+
+      - name: Install dependencies (bun)
+        run: |
+          cd frontend
+          ${HOME}/.bun/bin/bun install
+
+      - name: Build frontend (bun)
+        run: |
+          cd frontend
+          ${HOME}/.bun/bin/bun run build
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: frontend/build
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v1

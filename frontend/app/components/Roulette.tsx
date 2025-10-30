@@ -3,6 +3,8 @@ import { LLMResponse } from './LLMResponse';
 import { Prompt } from './Prompt';
 import { SSE } from 'sse.js';
 
+const DOMAIN = "https://roulette-server.zach.network"
+
 export function Roulette() {
   let [prompt, setPrompt] = useState(null);
   let [writable, setWritable] = useState(true);
@@ -17,34 +19,37 @@ export function Roulette() {
       return;
     }
    
-    /*
-    let events = new SSE("http://localhost:3000/prompt", {
+    let events = new SSE(`${DOMAIN}/prompt`, {
       payload: prompt
     });
-    */
 
-    let chunks = ["It's time f", "or you to", " go to the ", "movies"];
-    chunks = chunks.flatMap(chunk => chunk.split(""));
+    let chunks: string[] = [];
     let rendered = "";
 
     let clear = setInterval(() => {
       if (chunks.length == 0) {
+        if (events.readyState == SSE.CLOSED) {
+          clearTimeout(clear);
+        }
+
         return;
       }
 
       rendered += chunks.shift();
-
       setResponse(rendered);
-    }, 20);
+    }, 10);
 
+    events.addEventListener("message", (message: any) => {
+      chunks = chunks.concat(message.data.split(""));
+    })
   }, [prompt, writable])
 
   return (
     <main className="flex items-center justify-center pt-16 pb-4">
-      <div className="flex-1 flex flex-col items-center gap-16 min-h-0">
+      <div className="flex-1 flex flex-col items-center min-h-0">
         <header className="flex flex-col items-center gap-9">
           <div className="w-[500px] max-w-[100vw] p-4">
-            <p className="text-gray-700 dark:text-gray-200 text-center">Roulette</p>
+            <h1 className="mb-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl dark:text-white text-center">Roulette</h1>
           </div>
         </header>
         <div className="max-w-[900px] w-full space-y-6 px-4">
