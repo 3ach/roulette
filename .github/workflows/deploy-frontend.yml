@@ -39,9 +39,6 @@ jobs:
         with:
           path: frontend/build
 
-      - name: deploy to github pages
-        uses: actions/deploy-pages@v1
-
   deploy:
     needs: build
 
