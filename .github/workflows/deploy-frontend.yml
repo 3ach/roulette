@@ -29,17 +29,17 @@ jobs:
       - name: Install dependencies (bun)
         run: |
           cd frontend
-          ${HOME}/.bun/bin/bun install
+          ${home}/.bun/bin/bun install
 
-      - name: Build frontend (bun)
+      - name: build frontend (bun)
         run: |
           cd frontend
-          ${HOME}/.bun/bin/bun run build
+          ${home}/.bun/bin/bun run build
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v1
+      - name: upload pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
           path: frontend/build
 
-      - name: Deploy to GitHub Pages
+      - name: deploy to github pages
         uses: actions/deploy-pages@v1
