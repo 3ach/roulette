@@ -42,12 +42,17 @@ export function Roulette() {
     }, 10);
 
     events.addEventListener("message", (message: any) => {
-      if (message.event == "req-id") {
-        setRequestId(message.data);
-      } else {
-        chunks = chunks.concat(message.data.split(""));
+      chunks = chunks.concat(message.data.split(""));
+    })
+
+    events.addEventListener("open", (event: any) => {
+      console.log(event.headers);
+      let serverRequestId = event.headers["x-roulette-request"][0];
+      if (serverRequestId != undefined && serverRequestId != null) {
+        setRequestId(serverRequestId);
       }
     })
+
   }, [prompt, writable])
 
   return (

@@ -1,3 +1,5 @@
+#![feature(addr_parse_ascii)]
+
 mod app;
 mod db;
 mod models;
