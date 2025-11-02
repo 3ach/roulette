@@ -3,12 +3,14 @@ import { LLMResponse } from './LLMResponse';
 import { Prompt } from './Prompt';
 import { SSE } from 'sse.js';
 
-const DOMAIN = "https://roulette-server.zach.network"
+const DEV = true;
+const DOMAIN = DEV ? "http://localhost:3000" : "https://roulette-server.zach.network";
 
 export function Roulette() {
   let [prompt, setPrompt] = useState(null);
   let [writable, setWritable] = useState(true);
   let [response, setResponse] = useState<string | null>(null);
+  let [requestId, setRequestId] = useState<string | null>(null);
 
   function dispatch() {
     setWritable(false);
@@ -40,7 +42,11 @@ export function Roulette() {
     }, 10);
 
     events.addEventListener("message", (message: any) => {
-      chunks = chunks.concat(message.data.split(""));
+      if (message.event == "req-id") {
+        setRequestId(message.data);
+      } else {
+        chunks = chunks.concat(message.data.split(""));
+      }
     })
   }, [prompt, writable])
 
