@@ -1,11 +1,9 @@
 use crate::models::model::Model;
 
-use anyhow::Result;
-use futures::stream::{BoxStream, StreamExt};
 use json;
-use reqwest_eventsource::{retry::Never, Error as RESError, Event, RequestBuilderExt};
-use reqwest;
+use reqwest::header::HeaderMap;
 use std::env::var;
+use futures::future::{Ready, ready};
 
 pub struct ChatGPT {}
 
@@ -17,52 +15,43 @@ impl ChatGPT {
 
 
 impl<'a> Model<'a> for ChatGPT {
-    fn call(&self, prompt: &str) -> Result<BoxStream<'a, String>> {
+    fn url(&self) -> &str {
+        "https://api.openai.com/v1/responses"
+    }
+
+    fn headers(&self) -> HeaderMap {
+        let token = var("OPENAI_API_KEY").unwrap();
+
+        let mut headers = HeaderMap::new();
+        headers.insert("Authorization", format!("Bearer {token}").parse().unwrap());
+        headers
+    }
+
+    fn body(&self, prompt: &str) -> String {
         let mut body = json::JsonValue::new_object();
         body["model"] = "gpt-4.1".into();
         body["max_output_tokens"] = self.max_output().into();
         body["input"] = prompt.into();
         body["stream"] = true.into();
 
-        let token = var("OPENAI_API_KEY").unwrap();
+        json::stringify(body)
+    }
 
-        let client = reqwest::Client::new();
-        let mut response = client
-            .post("https://api.openai.com/v1/responses")
-            .bearer_auth(token)
-            .header("content-type", "application/json")
-            .body(json::stringify(body))
-            .eventsource()?;
-
-        response.set_retry_policy(Box::new(Never {}));
-        Ok(response
-            .filter_map(|event| async move {
-                match event {
-                    Ok(Event::Open) => None,
-                    Ok(Event::Message(msg)) => Some(msg),
-                    Err(RESError::StreamEnded) => None,
-                    Err(e) => {
-                        eprintln!("{e:?}");
-                        None
-                    }
-                }
-            })
-            .filter_map(|event| async move {
-                match event.event.as_str() {
-                    "response.failed" => {
-                        eprintln!("Error event: {:?}", event.data);
-                        None
-                    }
-                    "response.output_text.delta" => Some(event.data),
-                    _ => None,
-                }
-            })
-            .map(|data| {
+    fn event_handler(&self) -> fn((String, String)) -> Ready<Option<String>> {
+        |(event, data)| {
+            let result = if event == "response.failed" {
+                eprintln!("Failed: {data}");
+                None 
+            } else if event == "response.output_text.delta" {
                 json::parse(&data)
                     .map(|d| d["delta"].to_string())
-                    .unwrap_or(String::new())
-            })
-            .boxed())
+                    .ok()
+            } else {
+                None
+            };
+
+            ready(result)
+        }
     }
 
     fn name(&self) -> &str {

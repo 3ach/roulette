@@ -1,11 +1,9 @@
 use crate::models::model::Model;
 
-use anyhow::Result;
-use futures::stream::{BoxStream, StreamExt};
 use json;
-use reqwest;
-use reqwest_eventsource::{retry::Never, Error as RESError, Event, RequestBuilderExt};
+use reqwest::header::HeaderMap;
 use std::env::var;
+use futures::future::{Ready, ready};
 
 pub struct Claude {}
 
@@ -16,15 +14,26 @@ impl Claude {
 }
 
 impl<'a> Model<'a> for Claude {
-    fn call(&self, prompt: &str) -> Result<BoxStream<'a, String>> {
+    fn url(&self) -> &str {
+        "https://api.anthropic.com/v1/messages"
+    }
+    
+    fn headers(&self) -> HeaderMap {
+        let token = var("ANTHROPIC_API_KEY").unwrap();
+
+        let mut headers = HeaderMap::new();
+        headers.insert("x-api-key", token.parse().unwrap());
+        headers.insert("anthropic-version", "2023-06-01".parse().unwrap());
+        headers
+    }
+
+    fn body(&self, prompt: &str) -> String {
         let mut message = json::JsonValue::new_object();
         message["role"] = "user".into();
         message["content"] = prompt.into();
 
         let mut messages = json::JsonValue::new_array();
-        messages.push(message)?;
-
-        let token = var("ANTHROPIC_API_KEY").unwrap();
+        messages.push(message).unwrap();
 
         let mut body = json::JsonValue::new_object();
         body["model"] = "claude-sonnet-4-5".into();
@@ -32,46 +41,24 @@ impl<'a> Model<'a> for Claude {
         body["stream"] = true.into();
         body["messages"] = messages;
 
-        let client = reqwest::Client::new();
-        let mut response = client
-            .post("https://api.anthropic.com/v1/messages")
-            .header("x-api-key", token)
-            .header("anthropic-version", "2023-06-01")
-            .header("content-type", "application/json")
-            .body(json::stringify(body))
-            .eventsource()?;
+        json::stringify(body)
+    }
 
-        response.set_retry_policy(Box::new(Never {}));
-        Ok(response
-            .filter_map(|event| async move {
-                match event {
-                    Ok(Event::Open) => None,
-                    Ok(Event::Message(msg)) => Some(msg),
-                    Err(RESError::StreamEnded) => None,
-                    Err(e) => {
-                        eprintln!("{e:?}");
-                        None
-                    }
-                }
-            })
-            .filter_map(|event| async move {
-                match event.event.as_str() {
-                    "message_start" => None,
-                    "ping" => None,
-                    "error" => {
-                        eprintln!("Error event: {:?}", event.data);
-                        None
-                    }
-                    "content_block_delta" => Some(event.data),
-                    _ => None,
-                }
-            })
-            .map(|data| {
+    fn event_handler(&self) -> fn((String, String)) -> Ready<Option<String>> {
+        |(event, data)| {
+            let result = if event == "error" {
+                eprintln!("Failed: {data}");
+                None
+            } else if event == "content_block_delta" {
                 json::parse(&data)
                     .map(|d| d["delta"]["text"].to_string())
-                    .unwrap_or(String::new())
-            })
-            .boxed())
+                    .ok()
+            } else {
+                None
+            };
+
+            ready(result)
+        }
     }
 
     fn name(&self) -> &str {

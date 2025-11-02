@@ -1,12 +1,10 @@
 use crate::models::model::Model;
 
-use anyhow::Result;
-use futures::stream::{BoxStream, StreamExt};
 use json;
-use reqwest_eventsource::{retry::Never, Error as RESError, Event, RequestBuilderExt};
 use std::collections::HashMap;
-use reqwest;
+use reqwest::header::HeaderMap;
 use std::env::var;
+use futures::future::{ready, Ready};
 
 pub struct Gemini {}
 
@@ -17,12 +15,24 @@ impl Gemini {
 }
 
 impl<'a> Model<'a> for Gemini {
-    fn call(&self, prompt: &str) -> Result<BoxStream<'a, String>> {
+    fn url(&self) -> &str {
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse"
+    }
+
+    fn headers(&self) -> HeaderMap {
+        let token = var("GEMINI_API_KEY").unwrap();
+
+        let mut headers = HeaderMap::new();
+        headers.insert("x-goog-api-key", token.parse().unwrap());
+        headers
+    }
+
+    fn body(&self, prompt: &str) -> String {
         let mut parts = json::JsonValue::new_array();
-        parts.push(HashMap::from([("text", prompt)]))?;
+        parts.push(HashMap::from([("text", prompt)])).unwrap();
 
         let mut contents = json::JsonValue::new_array();
-        contents.push(HashMap::from([("parts", parts)]))?;
+        contents.push(HashMap::from([("parts", parts)])).unwrap();
 
         let mut generation_config = json::JsonValue::new_object();
         generation_config["maxOutputTokens"] = self.max_output().into();
@@ -32,41 +42,21 @@ impl<'a> Model<'a> for Gemini {
         body["contents"] = contents;
         body["generationConfig"] = generation_config;
 
-        let token = var("GEMINI_API_KEY").unwrap();
+        json::stringify(body)
+    }
 
-        let client = reqwest::Client::new();
-        let mut response = client
-            .post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse")
-            .header("x-goog-api-key", token)
-            .header("content-type", "application/json")
-            .body(json::stringify(body))
-            .eventsource()?;
-
-        response.set_retry_policy(Box::new(Never {}));
-        Ok(response
-            .filter_map(|event| async move {
-                match event {
-                    Ok(Event::Open) => None,
-                    Ok(Event::Message(msg)) => Some(msg),
-                    Err(RESError::StreamEnded) => None,
-                    Err(e) => {
-                        eprintln!("{e:?}");
-                        None
-                    }
-                }
-            })
-            .filter_map(|event| async move {
-                match event.event.as_str() {
-                    "message" => Some(event.data),
-                    _ => None,
-                }
-            })
-            .map(|data| {
+    fn event_handler(&self) -> fn((String, String)) -> Ready<Option<String>> {
+        |(event, data)| {
+            let result = if event != "message" {
+                None
+            } else {
                 json::parse(&data)
                     .map(|d| d["candidates"][0]["content"]["parts"][0]["text"].to_string())
-                    .unwrap_or(String::new())
-            })
-            .boxed())
+                    .ok()
+            };
+
+            ready(result)
+        }
     }
 
     fn name(&self) -> &str {
