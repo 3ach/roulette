@@ -8,7 +8,9 @@ use dotenvy;
 
 #[tokio::main]
 async fn main() {
-    dotenvy::dotenv().unwrap();
+    if let Err(e) = dotenvy::dotenv() {
+        eprintln!("Didn't fetch environment from .env: {e:?}");
+    }
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     let router = app::app().await;
