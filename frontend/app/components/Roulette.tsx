@@ -3,8 +3,7 @@ import { LLMResponse } from './LLMResponse';
 import { Prompt } from './Prompt';
 import { SSE } from 'sse.js';
 
-const DEV = true;
-const DOMAIN = DEV ? "http://localhost:3000" : "https://roulette-server.zach.network";
+const DOMAIN = import.meta.env.DEV ? "http://localhost:3000" : "https://roulette-server.zach.network";
 
 export function Roulette() {
   let [prompt, setPrompt] = useState(null);
