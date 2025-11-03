@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS turn (
   id BINARY(16) PRIMARY KEY,
-  ipv4 BINARY(4),
-  ipv6 BINARY(16),
+  ipv4 CHAR(42),
+  ipv6 CHAR(42),
   time_to_first_token INTEGER UNSIGNED,
   time_to_last_token INTEGER UNSIGNED,
   total_length INTEGER UNSIGNED,
